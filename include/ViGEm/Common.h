@@ -175,6 +175,14 @@ typedef struct _DS4_REPORT
     BYTE bSpecial;
     BYTE bTriggerL;
     BYTE bTriggerR;
+    USHORT wTimestamp;
+    BYTE bBatteryLvl;
+    USHORT wGyroX;
+    USHORT wGyroY;
+    USHORT wGyroZ;
+    USHORT wAccelX;
+    USHORT wAccelY;
+    USHORT wAccelZ;
 
 } DS4_REPORT, *PDS4_REPORT;
 
