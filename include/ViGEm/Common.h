@@ -176,13 +176,13 @@ typedef struct _DS4_REPORT
     BYTE bTriggerL;
     BYTE bTriggerR;
     USHORT wTimestamp;
-    BYTE bBatteryLvl;
-    USHORT wGyroX;
-    USHORT wGyroY;
-    USHORT wGyroZ;
-    USHORT wAccelX;
-    USHORT wAccelY;
-    USHORT wAccelZ;
+    //BYTE bBatteryLvl;
+    SHORT wGyroX;
+    SHORT wGyroY;
+    SHORT wGyroZ;
+    SHORT wAccelX;
+    SHORT wAccelY;
+    SHORT wAccelZ;
 
 } DS4_REPORT, *PDS4_REPORT;
 

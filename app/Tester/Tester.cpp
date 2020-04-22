@@ -70,26 +70,28 @@ int main()
 	DS4_REPORT report;
 	DS4_REPORT_INIT(&report);
 
-    report.wAccelX = 0; report.wAccelY = 0; report.wAccelZ = 0;
-    report.wGyroX = 0; report.wGyroY = 0; report.wGyroZ = 0;
+    // default gyro values
+    /*report.wGyroX = 0x0300;
+    report.wGyroY = 0xFEFF;
+    report.wGyroZ = 0xFCFF;
+    report.wAccelX = 0x79FD;
+    report.wAccelY = 0x1B14;
+    report.wAccelZ = 0xD1E9;*/
+    report.wTimestamp = 0;
 
 	while (!(GetAsyncKeyState(VK_ESCAPE) & 0x8000))
 	{
 		ret = vigem_target_ds4_update(client, ds4, report);
-		//report.bThumbLX++;
-		//report.wButtons |= DS4_BUTTON_CIRCLE;
+        report.wTimestamp += 188;
+		report.bThumbLX++;
+	    report.wButtons |= DS4_BUTTON_CIRCLE;
         
         // test Gyro/Accel
-        report.wGyroX = 0x0300;
-        report.wGyroY = 0xFEFF;
-        report.wGyroZ = 0xFCFF;
-        report.wAccelX = 0x79FD;
-        report.wAccelY = 0x1B14;
-        report.wAccelZ = 0xD1E9;
+        //report.wGyroX += 100;
 
         //std::cout << report.wGyroX << " " << report.wGyroZ << " " << report.wAccelY << std::endl;
 
-		Sleep(250);
+		Sleep(2);
 	}
 
 	#endif
