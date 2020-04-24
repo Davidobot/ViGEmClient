@@ -162,10 +162,25 @@ typedef enum _DS4_DPAD_DIRECTIONS
 
 } DS4_DPAD_DIRECTIONS, *PDS4_DPAD_DIRECTIONS;
 
+#include <pshpack1.h> // pack structs tightly
+//
+// Dualshock 4 HID Touchpad structure
+//
+typedef struct _DS4_TOUCH
+{
+    BYTE bPacketCounter;    // timestamp / packet counter associated with touch event
+    BYTE bIsUp1 : 1;        // 0 means down; active low
+    BYTE bTrackingNum1 : 7; // unique to each finger down, so for a lift and repress the value is incremented
+    BYTE bTouchData1[3];    // Two 12 bits values (for X and Y) 
+                            // middle byte holds last 4 bits of X and the starting 4 bits of Y
+    BYTE bIsUp2 : 1;        // second touch data immediately follows data of first touch 
+    BYTE bTrackingNum2 : 7;
+    BYTE bTouchData2[3];    // resolution is 1920x943
+} DS4_TOUCH, * PDS4_TOUCH;
+
 //
 // DualShock 4 HID Input report
 //
-#include <pshpack1.h>
 typedef struct _DS4_REPORT
 {
     BYTE bThumbLX;
@@ -184,7 +199,12 @@ typedef struct _DS4_REPORT
     SHORT wAccelX;
     SHORT wAccelY;
     SHORT wAccelZ;
-
+    BYTE _bUnknown1[4];
+    BYTE bBatteryLvlSpecial; // really should have a enum to show everything that this can represent (USB charging, battery level; EXT, headset, microphone connected)
+    BYTE _bUnknown2[2];
+    BYTE bTouchPacketsN;
+    DS4_TOUCH sCurrentTouch;
+    DS4_TOUCH sPreviousTouch;
 } DS4_REPORT, *PDS4_REPORT;
 #include <poppack.h>
 
@@ -200,6 +220,38 @@ VOID FORCEINLINE DS4_SET_DPAD(
     Report->wButtons |= (USHORT)Dpad;
 }
 
+//
+// Sets the current state of a touchpad slot on a DualShock 4 report.
+//
+VOID FORCEINLINE DS4_SET_TOUCHPAD(
+    _Out_ PDS4_REPORT Report,
+    _In_ BOOL FingerOne,
+    _In_ USHORT X,
+    _In_ USHORT Y,
+    _In_ BYTE TouchId,
+    _In_ BOOL Active)
+{
+    // copy current touch data into previous touch data slot
+    Report->sPreviousTouch = Report->sCurrentTouch;
+
+    Report->sCurrentTouch.bPacketCounter += 1;
+
+    if (FingerOne) {
+        Report->sCurrentTouch.bIsUp1 = !Active;
+        Report->sCurrentTouch.bTrackingNum1 = TouchId;
+        Report->sCurrentTouch.bTouchData1[0] = (X >> 4);
+        Report->sCurrentTouch.bTouchData1[1] = ((X & 0xF00) >> 8) | ((Y & 0xF) << 4);
+        Report->sCurrentTouch.bTouchData1[2] = ((Y & 0xFF0) >> 4);
+    }
+    else {
+        Report->sCurrentTouch.bIsUp2 = !Active;
+        Report->sCurrentTouch.bTrackingNum2 = TouchId;
+        Report->sCurrentTouch.bTouchData2[0] = (X >> 4);
+        Report->sCurrentTouch.bTouchData2[1] = ((X & 0xF00) >> 8) | ((Y & 0xF) << 4);
+        Report->sCurrentTouch.bTouchData2[2] = ((Y & 0xFF0) >> 4);
+    }
+}
+
 VOID FORCEINLINE DS4_REPORT_INIT(
     _Out_ PDS4_REPORT Report
 )
@@ -212,5 +264,10 @@ VOID FORCEINLINE DS4_REPORT_INIT(
     Report->bThumbRY = 0x80;
 
     DS4_SET_DPAD(Report, DS4_BUTTON_DPAD_NONE);
+
+    Report->sCurrentTouch.bIsUp1 = TRUE;
+    Report->sCurrentTouch.bIsUp2 = TRUE;
+    Report->sPreviousTouch.bIsUp1 = TRUE;
+    Report->sPreviousTouch.bIsUp2 = TRUE;
 }
 
