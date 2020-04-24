@@ -71,20 +71,29 @@ int main()
 	DS4_REPORT_INIT(&report);
 
     // default gyro values
-    /*report.wGyroX = 0x0300;
-    report.wGyroY = 0xFEFF;
-    report.wGyroZ = 0xFCFF;
-    report.wAccelX = 0x79FD;
-    report.wAccelY = 0x1B14;
-    report.wAccelZ = 0xD1E9;*/
-    report.wTimestamp = 0;
+    report.bThumbLX = 0xFF;
+    report.bThumbLY = 0xFF;
+    report.bThumbRX = 0xFF;
+    report.bThumbRY = 0xFF;
+    report.wButtons = 0xFFFF;
+    report.bSpecial = 0xFF;
+    report.bTriggerL = 0xFF;
+    report.bTriggerR = 0xFF;
+    report.wGyroX = 0x0101;
+    report.wGyroY = 0x0202;
+    report.wGyroZ = 0x0303;
+    report.wAccelX = 0x0404;
+    report.wAccelY = 0x0505;
+    report.wAccelZ = 0x0606;
+    report.wTimestamp = 0x0707;
+    report.bBatteryLvl = 0x08;
 
 	while (!(GetAsyncKeyState(VK_ESCAPE) & 0x8000))
 	{
 		ret = vigem_target_ds4_update(client, ds4, report);
-        report.wTimestamp += 188;
-		report.bThumbLX++;
-	    report.wButtons |= DS4_BUTTON_CIRCLE;
+        //report.wTimestamp += 188;
+		//report.bThumbLX++;
+	    //report.wButtons |= DS4_BUTTON_CIRCLE;
         
         // test Gyro/Accel
         //report.wGyroX += 100;

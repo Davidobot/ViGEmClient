@@ -164,7 +164,8 @@ typedef enum _DS4_DPAD_DIRECTIONS
 
 //
 // DualShock 4 HID Input report
-// 
+//
+#include <pshpack1.h>
 typedef struct _DS4_REPORT
 {
     BYTE bThumbLX;
@@ -176,7 +177,7 @@ typedef struct _DS4_REPORT
     BYTE bTriggerL;
     BYTE bTriggerR;
     USHORT wTimestamp;
-    //BYTE bBatteryLvl;
+    BYTE bBatteryLvl;
     SHORT wGyroX;
     SHORT wGyroY;
     SHORT wGyroZ;
@@ -185,6 +186,7 @@ typedef struct _DS4_REPORT
     SHORT wAccelZ;
 
 } DS4_REPORT, *PDS4_REPORT;
+#include <poppack.h>
 
 //
 // Sets the current state of the D-PAD on a DualShock 4 report.
