@@ -87,6 +87,16 @@ int main()
     report.wAccelZ = 0x0606;
     report.wTimestamp = 0x0707;
     report.bBatteryLvl = 0x08;
+    report.bBatteryLvlSpecial = 0x09;
+    report.bTouchPacketsN = 0x03;
+    DS4_SET_TOUCHPAD(&report, true, 0, 0, 1, true);
+    DS4_SET_TOUCHPAD(&report, false, 138, 644, 1, false);
+    DS4_PRESET_TOUCHPAD(&report);
+    DS4_SET_TOUCHPAD(&report, true, 139, 644, 2, false);
+    DS4_SET_TOUCHPAD(&report, false, 0, 0, 2, true);
+    DS4_PRESET_TOUCHPAD(&report);
+    DS4_SET_TOUCHPAD(&report, true, 0, 0, 3, true);
+    DS4_SET_TOUCHPAD(&report, false, 138, 644, 3, false);
 
 	while (!(GetAsyncKeyState(VK_ESCAPE) & 0x8000))
 	{

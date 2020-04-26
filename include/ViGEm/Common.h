@@ -169,12 +169,11 @@ typedef enum _DS4_DPAD_DIRECTIONS
 typedef struct _DS4_TOUCH
 {
     BYTE bPacketCounter;    // timestamp / packet counter associated with touch event
-    BYTE bIsUp1 : 1;        // 0 means down; active low
-    BYTE bTrackingNum1 : 7; // unique to each finger down, so for a lift and repress the value is incremented
+    BYTE bIsUpTrackingNum1; // 0 means down; active low
+                            // unique to each finger down, so for a lift and repress the value is incremented
     BYTE bTouchData1[3];    // Two 12 bits values (for X and Y) 
                             // middle byte holds last 4 bits of X and the starting 4 bits of Y
-    BYTE bIsUp2 : 1;        // second touch data immediately follows data of first touch 
-    BYTE bTrackingNum2 : 7;
+    BYTE bIsUpTrackingNum2; // second touch data immediately follows data of first touch 
     BYTE bTouchData2[3];    // resolution is 1920x943
 } DS4_TOUCH, * PDS4_TOUCH;
 
@@ -199,12 +198,12 @@ typedef struct _DS4_REPORT
     SHORT wAccelX;
     SHORT wAccelY;
     SHORT wAccelZ;
-    BYTE _bUnknown1[4];
+    BYTE _bUnknown1[5];
     BYTE bBatteryLvlSpecial; // really should have a enum to show everything that this can represent (USB charging, battery level; EXT, headset, microphone connected)
     BYTE _bUnknown2[2];
-    BYTE bTouchPacketsN;
+    BYTE bTouchPacketsN;     // 0x00 to 0x03 (USB max)
     DS4_TOUCH sCurrentTouch;
-    DS4_TOUCH sPreviousTouch;
+    DS4_TOUCH sPreviousTouch[2];
 } DS4_REPORT, *PDS4_REPORT;
 #include <poppack.h>
 
@@ -225,31 +224,37 @@ VOID FORCEINLINE DS4_SET_DPAD(
 //
 VOID FORCEINLINE DS4_SET_TOUCHPAD(
     _Out_ PDS4_REPORT Report,
-    _In_ BOOL FingerOne,
+    _In_ BOOLEAN FingerOne,
     _In_ USHORT X,
     _In_ USHORT Y,
     _In_ BYTE TouchId,
-    _In_ BOOL Active)
+    _In_ BOOLEAN Active)
 {
-    // copy current touch data into previous touch data slot
-    Report->sPreviousTouch = Report->sCurrentTouch;
-
-    Report->sCurrentTouch.bPacketCounter += 1;
-
     if (FingerOne) {
-        Report->sCurrentTouch.bIsUp1 = !Active;
-        Report->sCurrentTouch.bTrackingNum1 = TouchId;
-        Report->sCurrentTouch.bTouchData1[0] = (X >> 4);
-        Report->sCurrentTouch.bTouchData1[1] = ((X & 0xF00) >> 8) | ((Y & 0xF) << 4);
-        Report->sCurrentTouch.bTouchData1[2] = ((Y & 0xFF0) >> 4);
+        Report->sCurrentTouch.bIsUpTrackingNum1 = (!Active << 7) + TouchId;
+        Report->sCurrentTouch.bTouchData1[0] = (BYTE)(X & 0xFF);
+        Report->sCurrentTouch.bTouchData1[1] = (BYTE)(((X & 0xF00) >> 8) | ((Y & 0xF) << 4));
+        Report->sCurrentTouch.bTouchData1[2] = (BYTE)((Y & 0xFF0) >> 4);
     }
     else {
-        Report->sCurrentTouch.bIsUp2 = !Active;
-        Report->sCurrentTouch.bTrackingNum2 = TouchId;
-        Report->sCurrentTouch.bTouchData2[0] = (X >> 4);
-        Report->sCurrentTouch.bTouchData2[1] = ((X & 0xF00) >> 8) | ((Y & 0xF) << 4);
-        Report->sCurrentTouch.bTouchData2[2] = ((Y & 0xFF0) >> 4);
+        Report->sCurrentTouch.bIsUpTrackingNum2 = (!Active << 7) + TouchId;
+        Report->sCurrentTouch.bTouchData2[0] = (BYTE)(X & 0xFF);
+        Report->sCurrentTouch.bTouchData2[1] = (BYTE)(((X & 0xF00) >> 8) | ((Y & 0xF) << 4));
+        Report->sCurrentTouch.bTouchData2[2] = (BYTE)((Y & 0xFF0) >> 4);
     }
+}
+
+//
+// Moves the current touchdata to the previous slot and increments packet counter. To be done before setting new touchdata
+//
+VOID FORCEINLINE DS4_PRESET_TOUCHPAD(
+    _Out_ PDS4_REPORT Report)
+{
+    // copy current touch data into previous touch data slot
+    memcpy(&Report->sPreviousTouch[1], &Report->sPreviousTouch[0], sizeof(DS4_TOUCH));
+    memcpy(&Report->sPreviousTouch[0], &Report->sCurrentTouch, sizeof(DS4_TOUCH));
+    // increment touch packet number
+    Report->sCurrentTouch.bPacketCounter += 1;
 }
 
 VOID FORCEINLINE DS4_REPORT_INIT(
@@ -265,9 +270,12 @@ VOID FORCEINLINE DS4_REPORT_INIT(
 
     DS4_SET_DPAD(Report, DS4_BUTTON_DPAD_NONE);
 
-    Report->sCurrentTouch.bIsUp1 = TRUE;
-    Report->sCurrentTouch.bIsUp2 = TRUE;
-    Report->sPreviousTouch.bIsUp1 = TRUE;
-    Report->sPreviousTouch.bIsUp2 = TRUE;
+    // indicate touchdata (active low)
+    Report->sCurrentTouch.bIsUpTrackingNum1 = (1 << 7);
+    Report->sCurrentTouch.bIsUpTrackingNum2 = (1 << 7);
+    Report->sPreviousTouch[0].bIsUpTrackingNum1 = (1 << 7);
+    Report->sPreviousTouch[0].bIsUpTrackingNum2 = (1 << 7);
+    Report->sPreviousTouch[1].bIsUpTrackingNum1 = (1 << 7);
+    Report->sPreviousTouch[1].bIsUpTrackingNum2 = (1 << 7);
 }
 
